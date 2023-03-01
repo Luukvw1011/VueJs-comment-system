@@ -17,13 +17,13 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="(post) in posts.postElements">
-                <td>{{post.name}}</td>
-                <td>{{post.user}}</td>
-                <td>{{post.message}}</td>
-                <td>(0)</td>
-                <td></td>
-                <td>icon + icon</td>
+            <tr v-for="post in posts">
+                <th>{{post.name}}</th>
+                <th>{{post.user}}</th>
+                <th>{{post.message}}</th>
+                <th>(0)</th>
+                <th></th>
+                <th>icon + icon</th>
             </tr>
         </tbody>
     </v-table>
@@ -41,7 +41,7 @@
                     <span style="cursor:pointer" @click="formControll"><i class="fa-solid fa-circle-xmark text-error"></i></span>                    
                 </v-card-title>
 
-                <v-form @submit.prevent="submit" class="mx-4">
+                <v-form @submit.prevent="submitPost" class="mx-4">
                     <v-text-field
                         v-model="form.name"
                         label="Item naam"
@@ -65,11 +65,13 @@
 
 <script>
     import {reactive} from 'vue';
-    import {createPost, getPosts} from '@/firebase'
+    import { useFirestore, useCollection } from 'vuefire';
+    import { collection } from 'firebase/firestore'
 
     export default {
         setup() {
-            const posts = reactive({postElements: []})
+            const db = useFirestore();
+            const posts = useCollection(collection(db, 'posts'));
 
             const state = reactive({ 
                 forumTitle: "vaatwasser",
@@ -96,29 +98,17 @@
                 form.message = ''
             }
 
-            async function submit () {
-                await createPost({...form})
+            function submitPost() {
 
                 formControll();
-                location.reload();
             }
-
-            async function getAllPosts () {
-                const data = await getPosts();
-                
-                data.forEach(element => {
-                    posts.postElements.push(element.data());
-                });
-            }
-
-            getAllPosts();
 
             return {
                 state,
                 form,
-                formControll,
                 posts,
-                submit
+                submitPost,
+                formControll,
             }
         }
     }
