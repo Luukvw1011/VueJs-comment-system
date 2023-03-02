@@ -1,6 +1,5 @@
 <template>
     <h1>Forum</h1>
-
     <p class="font-italic mb-5">Op dit scherm staan alle mogelijke fora met bijbehorende tickets. Door te klikken op een forum naam worden de topics getoond. </p>
 
     <hr>
@@ -17,12 +16,12 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="post in posts">
+            <tr v-for="post in posts.fetchedData">
                 <th>{{post.name}}</th>
                 <th>{{post.user}}</th>
                 <th>{{post.message}}</th>
                 <th>(0)</th>
-                <th></th>
+                <th>{{post.created_at}}</th>
                 <th>icon + icon</th>
             </tr>
         </tbody>
@@ -30,12 +29,12 @@
 
     <v-container class="bg-white py-2 mt-2 mb-6 rounded d-flex justify-space-between">
         <p class="align-self-center">Door op de 'Toevoegen' knop te klikken kunt u een nieuw item aanmaken.</p>
-        <v-btn @click="formControll" :class="state.expand ? 'bg-warning':'bg-success'">{{state.buttonText}}</v-btn>
+        <v-btn @click="formControll" :class="global.expand ? 'bg-warning':'bg-success'">{{global.buttonText}}</v-btn>
     </v-container>
 
     <div class="d-flex justify-center">
         <v-fade-transition>
-            <v-card v-show="state.expand" width="600">
+            <v-card v-show="global.expand" width="600">
                 <v-card-title class="d-flex justify-space-between">
                     <span>Item Aanmaken</span>
                     <span style="cursor:pointer" @click="formControll"><i class="fa-solid fa-circle-xmark text-error"></i></span>                    
@@ -65,46 +64,75 @@
 
 <script>
     import {reactive} from 'vue';
-    import { useFirestore, useCollection } from 'vuefire';
-    import { collection } from 'firebase/firestore'
+    import {supabase} from '../supabase.js'
 
     export default {
         setup() {
-            const db = useFirestore();
-            const posts = useCollection(collection(db, 'posts'));
+            getPosts();
 
-            const state = reactive({ 
-                forumTitle: "vaatwasser",
+            //All fecthed posts from the database.
+            const posts = reactive({
+                fetchedData: []
+            })
+
+            //Global values for multiple use cases.
+            const global = reactive({ 
                 buttonText: "Toevoegen",
                 expand: false,
             });
 
+            //Data from the form after a submit.
             const form = reactive({
                 name: '',
                 message: '',
                 user: 'testUser'
             })
 
+            //Toggle the form element and set standard values to empty strings.
             function formControll () {
-                state.expand = !state.expand;
+                global.expand = !global.expand;
                 
-                if (state.expand == false) {
-                    state.buttonText = "Toevoegen"
+                if (global.expand == false) {
+                    global.buttonText = "Toevoegen"
                 } else {
-                    state.buttonText = "Sluiten"
+                    global.buttonText = "Sluiten"
                 }
 
                 form.name = ''
                 form.message = ''
             }
 
-            function submitPost() {
+            //Add post object to the database.
+            async function submitPost() {
+                try {
+                    await supabase.from("posts").insert([
+                        {...form}
+                    ])
+                } catch(error) {
+                    if (error instanceof Error) {
+                        console.log(error.message)
+                    }
+                }
 
                 formControll();
+                //Temp. Hard Reload.
+                window.location.reload();
             }
 
+            //Fetch all posts from the database.
+            async function getPosts () {
+                try {
+                    const postsRef = await supabase.from("posts").select("*");
+                    posts.fetchedData = postsRef.data;
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.log(error.message)
+                    }
+                }
+            } 
+
             return {
-                state,
+                global,
                 form,
                 posts,
                 submitPost,
