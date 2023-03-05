@@ -22,7 +22,15 @@
                 <th>{{post.message}}</th>
                 <th>(0)</th>
                 <th>{{post.created_at}}</th>
-                <th>icon + icon</th>
+                <th>
+                    <v-btn @click="deletePost" class="bg-error">
+                        <font-awesome-icon icon="trash" />
+                    </v-btn>
+
+                    <v-btn @click="global.dialog = true" class="ms-3 bg-primary">
+                        <font-awesome-icon icon="pen-to-square" />
+                    </v-btn>
+                </th>
             </tr>
         </tbody>
     </v-table>
@@ -60,6 +68,33 @@
             </v-card>
         </v-fade-transition>
     </div>
+
+    <div class="text-center">
+        <v-dialog
+        v-model="global.dialog"
+        width="600"
+        >
+        <v-card class="bg-grey-darken-3">
+            <v-card-title>
+                Post
+            </v-card-title>
+
+            <v-card-subtitle>Pas de geselecteerde post aan.</v-card-subtitle>
+
+            <v-card-item class="mt-2">
+                <v-form>
+                    <v-text-field label="Item naam"></v-text-field>
+                    <v-text-field label="Bericht"></v-text-field>
+                </v-form>
+            </v-card-item>
+
+            <v-card-actions class="d-flex flex-row-reverse">
+                <v-btn color="success">Submit</v-btn>
+                <v-btn color="white" @click="global.dialog = false">Sluiten</v-btn>
+            </v-card-actions>
+        </v-card>
+        </v-dialog>
+    </div>
 </template>
 
 <script>
@@ -79,6 +114,7 @@
             const global = reactive({ 
                 buttonText: "Toevoegen",
                 expand: false,
+                dialog: false,
             });
 
             //Data from the form after a submit.
@@ -100,6 +136,14 @@
 
                 form.name = ''
                 form.message = ''
+            }
+
+            function deletePost () {
+                alert("delete...");
+            }
+
+            function editPost () {
+                alert("edit...");
             }
 
             //Add post object to the database.
@@ -136,6 +180,8 @@
                 form,
                 posts,
                 submitPost,
+                deletePost,
+                editPost,
                 formControll,
             }
         }
