@@ -23,11 +23,11 @@
                 <th>(0)</th>
                 <th>{{post.created_at}}</th>
                 <th>
-                    <v-btn @click="deletePost" class="bg-error">
+                    <v-btn class="bg-error">
                         <font-awesome-icon icon="trash" />
                     </v-btn>
 
-                    <v-btn @click="global.dialog = true" class="ms-3 bg-primary">
+                    <v-btn @click="global.dialog = true, global.selectedPostId = post.id" class="ms-3 bg-primary">
                         <font-awesome-icon icon="pen-to-square" />
                     </v-btn>
                 </th>
@@ -83,13 +83,17 @@
 
             <v-card-item class="mt-2">
                 <v-form>
-                    <v-text-field label="Item naam"></v-text-field>
-                    <v-text-field label="Bericht"></v-text-field>
+                    <v-text-field v-model="form.name" label="Item naam"></v-text-field>
+                    <v-text-field v-model="form.message" label="Bericht"></v-text-field>
                 </v-form>
             </v-card-item>
 
             <v-card-actions class="d-flex flex-row-reverse">
-                <v-btn color="success">Submit</v-btn>
+                <v-btn 
+                    color="success" 
+                    @click="editPost(global.selectedPostId, form.name, form.message), 
+                    cleanup()"
+                >Submit</v-btn>
                 <v-btn color="white" @click="global.dialog = false">Sluiten</v-btn>
             </v-card-actions>
         </v-card>
@@ -99,12 +103,10 @@
 
 <script>
     import {reactive} from 'vue';
-    import {supabase} from '../supabase.js'
+    import {supabase, editPost, getPosts} from '../supabase.js'
 
     export default {
         setup() {
-            getPosts();
-
             //All fecthed posts from the database.
             const posts = reactive({
                 fetchedData: []
@@ -115,6 +117,7 @@
                 buttonText: "Toevoegen",
                 expand: false,
                 dialog: false,
+                selectedPostId: null,
             });
 
             //Data from the form after a submit.
@@ -134,16 +137,15 @@
                     global.buttonText = "Sluiten"
                 }
 
+                cleanup();
+            }
+
+            function cleanup () {
                 form.name = ''
                 form.message = ''
-            }
 
-            function deletePost () {
-                alert("delete...");
-            }
-
-            function editPost () {
-                alert("edit...");
+                //Temp. Hard Reload.
+                window.location.reload();
             }
 
             //Add post object to the database.
@@ -159,30 +161,18 @@
                 }
 
                 formControll();
-                //Temp. Hard Reload.
-                window.location.reload();
             }
 
-            //Fetch all posts from the database.
-            async function getPosts () {
-                try {
-                    const postsRef = await supabase.from("posts").select("*");
-                    posts.fetchedData = postsRef.data;
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.log(error.message)
-                    }
-                }
-            } 
+            getPosts().then(response => posts.fetchedData = response);
 
             return {
                 global,
                 form,
                 posts,
                 submitPost,
-                deletePost,
                 editPost,
                 formControll,
+                cleanup,
             }
         }
     }
